@@ -2,6 +2,7 @@ import urllib2
 import time
 import json
 import subprocess
+import os
 startTime = int(time.time())
 polling_interval = 10
 running = True
@@ -26,17 +27,23 @@ def poll_instagram(): #program does nothing as written
 def print_photos():
     for id, url in photosDict.iteritems():
         if id not in printedIds:
+            running = False
             printedIds.append(id)
             tempfile = urllib2.urlopen(url)
             filename = id+'.jpg'
+            filename2 = id+".jpeg"
             output = open(filename,'wb')
             output.write(tempfile.read())
             output.close()
             print filename+" has been saved."
-            subprocess.call(["obexftp", "--nopath", "--noconn", "--uuid", "none", "--bluetooth", bluetooth_address, "--channel", "4", "-p", filename],shell=True)
+            with open(filename2, "w") as outputfile:
+                subprocess.Popen(["jpegtran", filename],stdout=outputfile).communicate()
+            print filename+" has been converted"
+            subprocess.Popen(["obexftp", "--nopath", "--noconn", "--uuid", "none", "--bluetooth", bluetooth_address, "--channel", "4", "-p", filename2]).communicate()
             os.remove(filename)
-            print filenam+" has been printed."
-
+            os.remove(filename2)
+            print filename+" has been printed."
+            running = True
 
 while running:
     start= time.clock()

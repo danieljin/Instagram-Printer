@@ -4,26 +4,25 @@ import json
 import subprocess
 import os, shutil, shutil
 startTime = int(time.time())
-polling_interval = 10
+polling_interval = 100
 running = True
 photosDict = {}
 printedIds = []
 instagram_tag = "#danandjas"
 bluetooth_address = "08:EF:3B:41:D4:B6"
 print startTime
-def poll_instagram(): #program does nothing as written
+def poll_instagram():
     response = urllib2.urlopen("https://api.instagram.com/v1/tags/danandjas/media/recent?access_token=11420543.761e276.3ce68c22f21746acbbf9a4a886c43097").read()
     json_data = json.loads(response)
     for post in json_data['data']:
-        if instagram_tag in post["caption"]["text"]:
-            if int(post["caption"]["created_time"]) > startTime:
-                if post["id"] not in photosDict:
-                    photosDict[post["id"]] = post["images"]["standard_resolution"]["url"]
-        for comment in post["comments"]["data"]:
-            if instagram_tag in comment["text"]:
-                if int(comment["created_time"]) > startTime:
-                    if post["id"] not in photosDict:
-                        photosDict[post["id"]] = post["images"]["standard_resolution"]["url"]
+        if post["id"] not in photosDict:
+            if instagram_tag in post["caption"]["text"]:
+                if int(post["caption"]["created_time"]) > startTime:
+                    photosDict[post["id"]] = {'image': post["images"]["standard_resolution"]["url"], 'username': post["user"]["username"], 'comment': post["caption"]["text"]}
+            for comment in post["comments"]["data"]:
+                if instagram_tag in comment["text"]:
+                    if int(comment["created_time"]) > startTime:
+                        photosDict[post["id"]] = {'image': post["images"]["standard_resolution"]["url"], 'username': post["user"]["username"], 'comment': post["caption"]["text"]}
 def print_photos():
     for id, url in photosDict.iteritems():
         if id not in printedIds:
@@ -40,6 +39,7 @@ def print_photos():
                 subprocess.Popen(["jpegtran", filename],stdout=outputfile).communicate()
             print filename+" has been converted"
             subprocess.Popen(["obexftp", "--nopath", "--noconn", "--uuid", "none", "--bluetooth", bluetooth_address, "--channel", "4", "-p", filename2]).communicate()
+            #wait full print time before trying again.
             os.remove(filename)
             os.remove(filename2)
             print filename+" has been printed."

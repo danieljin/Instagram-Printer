@@ -4,45 +4,72 @@ import json
 import subprocess
 import os, shutil, errno
 startTime = int(time.time())
-polling_interval = 100
+polling_interval = 10
 running = True
 photosDict = {}
-printedIds = []
+printQueue = []
 instagram_tag = "#danandjas"
 bluetooth_address = "08:EF:3B:41:D4:B6"
-print startTime
 def poll_instagram():
+    print startTime
     response = urllib2.urlopen("https://api.instagram.com/v1/tags/danandjas/media/recent?access_token=11420543.761e276.3ce68c22f21746acbbf9a4a886c43097").read()
     json_data = json.loads(response)
     for post in json_data['data']:
-        if post["id"] not in photosDict:
+        if post["id"] not in printQueue:
             if instagram_tag in post["caption"]["text"]:
                 if int(post["caption"]["created_time"]) > startTime:
-                    photosDict[post["id"]] = {'image': post["images"]["standard_resolution"]["url"], 'username': post["user"]["username"], 'comment': post["caption"]["text"]}
+                    photosDict[post["id"]] = {'url': post["images"]["standard_resolution"]["url"], 'username': post["user"]["username"], 'comment': post["caption"]["text"]}
+                    printQueue.append(post["id"])
             for comment in post["comments"]["data"]:
                 if instagram_tag in comment["text"]:
                     if int(comment["created_time"]) > startTime:
-                        photosDict[post["id"]] = {'image': post["images"]["standard_resolution"]["url"], 'username': post["user"]["username"], 'comment': post["caption"]["text"]}
+                        photosDict[post["id"]] = {'url': post["images"]["standard_resolution"]["url"], 'username': post["user"]["username"], 'comment': post["caption"]["text"]}
+                        printQueue.append(post["id"])
+
 def print_photos():
-    for id, url in photosDict.iteritems():
-        if id not in printedIds:
+    if printQueue:
+        global startTime
+        startTime = int(time.time())
+        for id in printQueue:
             running = False
-            printedIds.append(id)
-            tempfile = urllib2.urlopen(url)
-            filename = id+'.jpg'
-            filename2 = id+".jpeg"
-            output = open(filename,'wb')
-            output.write(tempfile.read())
-            output.close()
-            print filename+" has been saved."
-            with open(filename2, "w") as outputfile:
-                subprocess.Popen(["jpegtran", filename],stdout=outputfile).communicate()
-            print filename+" has been converted"
-            subprocess.Popen(["obexftp", "--nopath", "--noconn", "--uuid", "none", "--bluetooth", bluetooth_address, "--channel", "4", "-p", filename2]).communicate()
-            #wait full print time before trying again.
-            os.remove(filename)
-            os.remove(filename2)
-            print filename+" has been printed."
+            entity = photosDict.get(id)
+	    tempfile = urllib2.urlopen(entity.get('url'))
+	    filename = id+'.jpg'
+	    filename2 = id+'_template.jpg'
+	    filename3 = id+".jpeg"
+	    output = open(filename,'wb')
+	    output.write(tempfile.read())
+	    output.close()
+	    print filename+" has been saved."
+            apply_template(filename, filename2, entity.get('username'), entity.get('comment'))
+	    with open(filename3, "w") as outputfile:
+	        subprocess.Popen(["jpegtran", filename2],stdout=outputfile).communicate()
+    	    print filename+" has been converted"
+            printed = False
+	    print "attempting to print"
+            count = 0
+            while not printed:
+                try:
+                    count += 1;
+	            child = subprocess.Popen(["obexftp", "--nopath", "--noconn", "--uuid", "none", "--bluetooth", bluetooth_address, "--channel", "4", "-p", filename2], stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	            child.communicate()
+                    if (child.returncode == 255):
+                        printed = True
+                    else:
+                        if count <= 1:
+                            if (child.returncode == 69):
+                                print "make sure printer has paper"
+                            else:
+                                print "make sure printer is on."
+	        except:
+                    pass
+	    os.remove(filename)
+	    os.remove(filename2)
+	    os.remove(filename3)
+	    print filename+" has been printed."
+            printQueue.remove(id)
+            print "waiting 60 seconds for print to finish"
+            time.sleep(6)
             running = True
 
 def apply_template(input_filename, output_filename, username, caption):
@@ -81,7 +108,6 @@ while running:
     start= time.clock()
     poll_instagram()
     print_photos()
-    print photosDict
     print "tick"
     work_duration = time.clock() - start
     time.sleep( polling_interval - work_duration )

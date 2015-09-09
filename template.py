@@ -4,14 +4,14 @@ import json
 import subprocess
 import shutil
 import os, errno
-def apply_template(username, caption):
+def apply_template(input_filename, output_filename, username, caption):
     mkdir_p("tmp")
-    subprocess.Popen(["convert", "IMG_0195.JPG", "-resize", "1000x1000", "-gravity", "center", "-extent", "1000x1000", "resize.JPG"]).communicate()
-    subprocess.Popen(["convert", "template.JPG", "resize.JPG", "-geometry", "+0+145", "-composite", "combined.JPG"]).communicate()
-    subprocess.Popen(["convert", "combined.jpg", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "HelveticaLTStd-Bold", "-annotate", "+134+58", username, "text1.JPG"]).communicate()
-    subprocess.Popen(["convert", "text1.jpg", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "HelveticaLTStd-Bold", "-annotate", "+34+1260", username, "text2.JPG"]).communicate()
+    subprocess.Popen(["convert", input_filename, "-resize", "1000x1000", "-gravity", "center", "-extent", "1000x1000", "tmp/resize.JPG"]).communicate()
+    subprocess.Popen(["convert", "template.JPG", "tmp/resize.JPG", "-geometry", "+0+150", "-composite", "tmp/combined.JPG"]).communicate()
+    subprocess.Popen(["convert", "tmp/combined.jpg", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "HelveticaLTStd-Bold", "-annotate", "+134+63", username, "tmp/text1.JPG"]).communicate()
+    subprocess.Popen(["convert", "tmp/text1.jpg", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "HelveticaLTStd-Bold", "-annotate", "+34+1267", username, "tmp/text2.JPG"]).communicate()
     caption = insert_new_lines(caption, 40, 0)
-    subprocess.Popen(["convert", "text2.jpg", "-pointsize", "45", "-fill", "black", "-font", "HelveticaLTStd-Light.otf", "-annotate", "+34+1315", caption, "final.JPG"]).communicate()
+    subprocess.Popen(["convert", "tmp/text2.jpg", "-pointsize", "45", "-fill", "black", "-font", "HelveticaLTStd-Light.otf", "-annotate", "+34+1322", caption, output_filename]).communicate()
     print "fuck."
     shutil.rmtree("tmp")
 
@@ -36,4 +36,4 @@ def mkdir_p(path):
             pass
         else: raise
 
-apply_template("dankjin","Hi baby I love you so much and I want to be with you forever and ever! You feel me? #danandjas")
+apply_template("IMG_0195.JPG", "final.JPG", "dankjin","Hi baby I love you so much and I want to be with you forever and ever! You feel me? #danandjas")

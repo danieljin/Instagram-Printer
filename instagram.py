@@ -2,7 +2,7 @@ import urllib2
 import time
 import json
 import subprocess
-import os, shutil, shutil
+import os, shutil, errno
 startTime = int(time.time())
 polling_interval = 10
 running = True
@@ -49,7 +49,7 @@ def apply_template(input_filename, output_filename, username, caption):
     mkdir_p("tmp")
     subprocess.Popen(["convert", input_filename, "-resize", "1000x1000", "-gravity", "center", "-extent", "1000x1000", "tmp/resize.JPG"]).communicate()
     subprocess.Popen(["convert", "template.JPG", "tmp/resize.JPG", "-geometry", "+0+150", "-composite", "tmp/combined.JPG"]).communicate()
-    subprocess.Popen(["convert", "tmp/combined.JPG", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "Helvetica-Bold", "-annotate", "+134+63", username, "tmp/text1.JPG"]).communicate()
+    subprocess.Popen(["convert", "tmp/combined.JPG", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "Helvetica-Bold", "-annotate", "+134+78", username, "tmp/text1.JPG"]).communicate()
     subprocess.Popen(["convert", "tmp/text1.JPG", "-pointsize", "45", "-fill", "rgb(18,86,136)", "-font", "Helvetica-Bold", "-annotate", "+34+1267", username, "tmp/text2.JPG"]).communicate()
     caption = insert_new_lines(caption, 45, 0)
     subprocess.Popen(["convert", "tmp/text2.JPG", "-pointsize", "45", "-fill", "black", "-font", "Helvetica", "-weight", "200", "-annotate", "+34+1322", caption, output_filename]).communicate()

@@ -4,7 +4,7 @@ import json
 import subprocess
 import os, shutil, errno
 startTime = int(time.time())
-polling_interval = 10
+polling_interval = 20
 running = True
 photosDict = {}
 printQueue = []
@@ -69,7 +69,7 @@ def print_photos():
 	    print filename+" has been printed."
             printQueue.remove(id)
             print "waiting 60 seconds for print to finish"
-            time.sleep(6)
+            time.sleep(60)
             running = True
 
 def apply_template(input_filename, output_filename, username, caption):
